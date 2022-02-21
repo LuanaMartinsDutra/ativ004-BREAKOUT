@@ -176,6 +176,13 @@ def main(score, balls):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 carry = False
+                
+        if game_active:
+            keys = pygame.key.get_pressed()
+            if keys[pygame.K_LEFT]:
+                paddle.move_left(10)
+            if keys[pygame.K_RIGHT]:
+                paddle.move_right(10)
 
         if game_active:
             keys = pygame.key.get_pressed()
@@ -201,12 +208,30 @@ def main(score, balls):
                 ball.velocity[1] = ball.velocity[1]
                 balls += 1
 
+            all_sprites_list.update()
+
+            if ball.rect.y < 40:
+                ball.velocity[1] = -ball.velocity[1]
+
+            if ball.rect.x >= width - wall_width - 10:
+                ball.velocity[0] = -ball.velocity[0]
+
+            if ball.rect.x <= wall_width:
+                ball.velocity[0] = -ball.velocity[0]
+
+            if ball.rect.y > height:
+                ball.rect.x = width // 2 - 5
+                ball.rect.y = height // 2 - 5
+                ball.velocity[1] = ball.velocity[1]
+                balls += 1
+
             if pygame.sprite.collide_mask(paddle, ball):
                 ball.rect.x += ball.velocity[0]
                 ball.rect.y -= ball.velocity[1]
                 ball.bounce()
                 paddle_sound.play()
 
+       
         brick_collision_list = pygame.sprite.spritecollide(ball, all_bricks, False)
         for brick in brick_collision_list:
             ball.bounce()
@@ -264,6 +289,10 @@ def main(score, balls):
             game_active = False
             screen.blit(game_over_text, (200, 300))
 
+        if balls == 4:
+            game_active = False
+            screen.blit(game_over_text, (200, 300))
+        
         all_sprites_list.draw(screen)
 
         pygame.display.update()
