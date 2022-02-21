@@ -17,6 +17,7 @@ height = 600
 size = (800, 600)
 screen = pygame.display.set_mode(size)
 pygame.display.set_caption("BREAKOUT")
+text_font = pygame.font.Font("PressStart2P.ttf", 30)
 clock = pygame.time.Clock()
 
 score = 0
@@ -25,6 +26,11 @@ velocity = 4
 
 paddle_width = 54
 paddle_height = 20
+
+text_surface = text_font.render("000", True, white)
+texto_surface = text_font.render("1", True, white)
+ttext_surface = text_font.render("000", True, white)
+t2xt_surface = text_font.render("2", True, white)
 
 all_sprites_list = pygame.sprite.Group()
 
@@ -246,7 +252,11 @@ def main(score, balls):
         pygame.draw.line(screen, yellow, [(width - wall_width / 2) - 1, 100 + 6 * brick_height + 6 * y_gap],
                          [(width - wall_width / 2) - 1, 100 + 8 * brick_height + 8 * y_gap], wall_width)
 
-
+        screen.blit(text_surface, (100, 45))
+        screen.blit(texto_surface, (20, 30))
+        screen.blit(ttext_surface, (500, 45))
+        screen.blit(t2xt_surface, (415, 30))
+        
         all_sprites_list.draw(screen)
 
         pygame.display.update()
