@@ -59,12 +59,12 @@ class Paddle(pygame.sprite.Sprite):
         pygame.draw.rect(self.image, color, [0, 0, width, height])
         self.rect = self.image.get_rect()
 
-    def moveRight(self, pixels):
+    def move_right(self, pixels):
         self.rect.x += pixels
         if self.rect.x > width - wall_width - paddle_width:
             self.rect.x = width - wall_width - paddle_width
 
-    def moveLeft(self, pixels):
+    def move_left(self, pixels):
         self.rect.x -= pixels
         if self.rect.x < wall_width:
             self.rect.x = wall_width
@@ -215,6 +215,7 @@ def main(score, balls):
             brick_sound.play()
             if len(brick_collision_list) > 0:
                 step += 1
+                score += 1
                 for i in range(0, 448, 28):
                     if step == i:
                         ball.velocity[0] += 1
