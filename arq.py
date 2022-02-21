@@ -1,6 +1,7 @@
 import pygame
 
 pygame.init()
+pygame.mixer.init()
 
 write = (255, 255, 255)
 grey = (212, 210, 212)
@@ -18,10 +19,19 @@ screen = pygame.display.set_mode(size)
 pygame.display.set_caption("BREAKOUT")
 clock = pygame.time.Clock()
 
+score = 0
+balls = 1
+velocity = 4
+
 paddle_width = 54
 paddle_height = 20
 
 all_sprites_list = pygame.sprite.Group()
+
+brick_sound = pygame.mixer.Sound("sounds/brick.wav")
+paddle_sound = pygame.mixer.Sound('sounds/paddle.wav')
+wall = pygame.mixer.Sound('sounds/ball.wav')
+
 
 class Brick(pygame.sprite.Sprite):
 
@@ -31,6 +41,52 @@ class Brick(pygame.sprite.Sprite):
         pygame.draw.rect(self.image, color, [0, 0, width, height])
         self.rect = self.image.get_rect()
 
+
+class Paddle(pygame.sprite.Sprite):
+
+    def __init__(self, color, width, height):
+        super().__init__()
+        self.image = pygame.Surface([width, height])
+        pygame.draw.rect(self.image, color, [0, 0, width, height])
+        self.rect = self.image.get_rect()
+
+    def moveRight(self, pixels):
+        self.rect.x += pixels
+        if self.rect.x > width - wall_width - paddle_width:
+            self.rect.x = width - wall_width - paddle_width
+
+    def moveLeft(self, pixels):
+        self.rect.x -= pixels
+        if self.rect.x < wall_width:
+            self.rect.x = wall_width
+
+
+class Ball(pygame.sprite.Sprite):
+
+    def __init__(self, color, width, height):
+        super().__init__()
+        self.image = pygame.Surface([width, height])
+        pygame.draw.rect(self.image, color, [0, 0, width, height])
+        self.rect = self.image.get_rect()
+        self.velocity = [velocity, velocity]
+
+    def update(self):
+        self.rect.x += self.velocity[0]
+        self.rect.y += self.velocity[1]
+
+    def bounce(self):
+        self.velocity[0] = self.velocity[0]
+        self.velocity[1] = -self.velocity[1]
+
+
+paddle = Paddle(blue, paddle_width, paddle_height)
+paddle.rect.x = width // 2 - paddle_width // 2
+paddle.rect.y = height - 65
+
+ball = Ball(write, 10, 10)
+ball.rect.x = width // 2 - 5
+ball.rect.y = height // 2 - 5
+
 all_bricks = pygame.sprite.Group()
 
 brick_width = 55
@@ -38,6 +94,7 @@ brick_height = 10
 x_gap = 4.5
 y_gap = 4
 wall_width = 16
+
 
 def bricks():
     for j in range(8):
@@ -95,17 +152,67 @@ def bricks():
                     all_sprites_list.add(brick)
                     all_bricks.add(brick)
 
+
 brick_wall = bricks()
 
-def main():
-    clock.tick(60)
+all_sprites_list.add(paddle)
+all_sprites_list.add(ball)
+
+
+def main(score, balls):
+
+    step = 0
 
     carry = True
-    while True:
+    while carry:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 carry = False
+
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_LEFT]:
+            paddle.moveLeft(10)
+        if keys[pygame.K_RIGHT]:
+            paddle.moveRight(10)
+
         all_sprites_list.update()
+
+        if ball.rect.y < 40:
+            ball.velocity[1] = -ball.velocity[1]
+            wall.play()
+
+        if ball.rect.x >= width - wall_width - 10:
+            ball.velocity[0] = -ball.velocity[0]
+            wall.play()
+
+        if ball.rect.x <= wall_width:
+            ball.velocity[0] = -ball.velocity[0]
+            wall.play()
+
+        if ball.rect.y > height:
+            ball.rect.x = width // 2 - 5
+            ball.rect.y = height // 2 - 5
+            ball.velocity[1] = ball.velocity[1]
+
+        if pygame.sprite.collide_mask(paddle, ball):
+            ball.rect.x += ball.velocity[0]
+            ball.rect.y -= ball.velocity[1]
+            ball.bounce()
+            paddle_sound.play()
+
+        brick_collision_list = pygame.sprite.spritecollide(ball, all_bricks, False)
+        for brick in brick_collision_list:
+            ball.bounce()
+            brick_sound.play()
+            if len(brick_collision_list) > 0:
+                step += 1
+                for i in range(0, 448, 28):
+                    if step == i:
+                        ball.velocity[0] += 1
+                        ball.velocity[1] += 1
+
+            brick.kill()
+
 
         screen.fill(black)
 
@@ -139,91 +246,13 @@ def main():
         pygame.draw.line(screen, yellow, [(width - wall_width / 2) - 1, 100 + 6 * brick_height + 6 * y_gap],
                          [(width - wall_width / 2) - 1, 100 + 8 * brick_height + 8 * y_gap], wall_width)
 
+
         all_sprites_list.draw(screen)
 
         pygame.display.update()
 
+        clock.tick(60)
+
     pygame.quit()
 
-main()
-
-COLOR_BLACK = (0, 0, 0)
-COLOR_WHITE = (255, 255, 255)
-size = (650, 720)
-height = 20
-width = 160
-x = 250
-y = 650
-vel = 0.5
-
-screen = pygame.display.set_mode(size)
-pygame.display.set_caption("MyPong - PyGame Edition - 2021.01.30")
-screen.fill(COLOR_BLACK)
-font = pygame.font.Font('PressStart2P.ttf', 44)
-
-# making the bricks
-Brick = pygame.draw.rect(screen, COLOR_WHITE, [0, 0, 10, 5])
-
-bricks = []
-for i in range(100, 375, 25):
-    lista_int = []
-    for j in range(8):
-        lista_int.append(Brick)
-    bricks.append(lista_int)
-
-# paddle
-paddle = pygame.draw.rect(screen, COLOR_WHITE, [x, y, width, height])
-
-# ball
-ball = pygame.draw.rect(screen, COLOR_WHITE, [300, 500, 20, 20])
-ball_x = 300
-ball_y = 500
-ball_dx = 0.2
-ball_dy = 0.2
-
-pygame.display.flip()
-game_clock = pygame.time.Clock()
-game_loop = True
-
-while game_loop:
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            pygame.quit()
-            game_loop = False
-    ball = pygame.draw.ellipse(screen, COLOR_WHITE, [ball_x, ball_y, 20, 20])
-
-    keys = pygame.key.get_pressed()
-
-    if keys[pygame.K_LEFT] and x > 0:
-        x -= vel
-
-    if keys[pygame.K_RIGHT] and x < 650 - width:
-        x += vel
-    screen.fill((0, 0, 0))
-    Brick = pygame.draw.rect(screen, COLOR_WHITE, [0, 0, 10, 5])
-    ball = pygame.draw.ellipse(screen, COLOR_WHITE, [ball_x, ball_y, 20, 20])
-
-    # ball movement
-    ball_x = ball_x + ball_dx
-    ball_y = ball_y + ball_dy
-    if ball_x > 635:
-        ball_dx *= -1
-    elif ball_x <= 0:
-        ball_dx *= -1
-
-    if ball_y > 720:
-        ball_dy *= -1
-    elif ball_y <= 0:
-        ball_dy *= -1
-
-    paddle = pygame.draw.rect(screen, COLOR_WHITE, [x, y, width, height])
-    Brick = pygame.draw.rect(screen, COLOR_WHITE, [0, 0, 20, 10])
-
-    # collision with the paddle
-    if paddle.collidepoint(ball_x, ball_y + 10):
-        ball_dy *= -1
-
-    pygame.display.update()
-    game_clock.tick()
-    pygame.display.flip()
-
+main(score, balls)
